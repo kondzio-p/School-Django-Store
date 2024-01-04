@@ -4,23 +4,14 @@
 {% block content %}
 
 <div class="row">
+    {%for product in products%}
     <div class="col-lg-4">
         <div class="box-element product">
             <img class="thumbnail" src="{%static 'images/placeholder.png'%}">
+            <h6>{{ product.name }}</h6>
+            <p>{{product.price}}</p>
         </div>
     </div>
-
-    <div class="col-lg-4">
-        <div class="box-element product">
-            <img class="thumbnail" src="{%static 'images/placeholder.png'%}">
-        </div>
-    </div>
-    
-    <div class="col-lg-4">
-        <div class="box-element product">
-            <img class="thumbnail" src="{%static 'images/placeholder.png'%}">
-        </div>
-    </div>
-
+    {%endfor%}
 </div>
 {% endblock content %}
