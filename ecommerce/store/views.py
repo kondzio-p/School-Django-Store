@@ -1,33 +1,60 @@
-from django.shortcuts import render
-from django.http import JsonResponse
 import json
-from .models import *
+
+from django.http import JsonResponse
+from django.shortcuts import render
+
+from .models import Customer, Order, OrderItem, Product
+
+
+def _get_order(request):
+    """Zwraca otwarte zamówienie zalogowanego klienta albo None dla gościa."""
+    if not request.user.is_authenticated:
+        return None
+    customer, _ = Customer.objects.get_or_create(
+        user=request.user,
+        defaults={"name": request.user.username, "email": request.user.email},
+    )
+    order, _ = Order.objects.get_or_create(customer=customer, complete=False)
+    return order
+
 
 def store(request):
     products = Product.objects.all()
-    context = {'products' : products}
-    return render(request, 'store/store.html', context)
+    return render(request, "store/store.html", {"products": products})
+
 
 def cart(request):
-    if request.user.is_authenticated:
-        customer = request.user.customer
-        order, created = Order.objects.get_or_create(customer=customer, complete=False)
-        items = order.orderitem_set.all()
-    else:
-        items = []
-    context = {'items':items, 'order' : order}
-    return render(request, 'store/cart.html', context)
+    order = _get_order(request)
+    items = order.orderitem_set.all() if order else []
+    order = order or {"get_cart_total": 0, "get_cart_items": 0}
+    return render(request, "store/cart.html", {"items": items, "order": order})
+
 
 def checkout(request):
-    context = {}
-    return render(request, 'store/checkout.html', context)
+    order = _get_order(request)
+    items = order.orderitem_set.all() if order else []
+    order = order or {"get_cart_total": 0, "get_cart_items": 0}
+    return render(request, "store/checkout.html", {"items": items, "order": order})
 
 
 def updateItem(request):
-    data = json.loads(request.body)
-    productId = data['productID']
-    action = data['action']
+    if request.method != "POST":
+        return JsonResponse({"error": "Metoda niedozwolona"}, status=405)
+    order = _get_order(request)
+    if order is None:
+        return JsonResponse({"error": "Wymagane logowanie"}, status=401)
 
-    print("Produkt: ", productId)
-    print("Akcja: ", action)
-    return JsonResponse('Item added', safe=False)
+    data = json.loads(request.body)
+    product = Product.objects.get(id=data["productId"])
+    item, _ = OrderItem.objects.get_or_create(order=order, product=product)
+
+    if data["action"] == "add":
+        item.quantity += 1
+    elif data["action"] == "remove":
+        item.quantity -= 1
+
+    if item.quantity <= 0:
+        item.delete()
+    else:
+        item.save()
+    return JsonResponse({"quantity": max(item.quantity, 0)})
