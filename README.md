@@ -12,7 +12,7 @@ Sklep internetowy w Django z PostgreSQL: katalog produktów, koszyk zalogowanego
 `Customer` (1:1 z `User`) → `Order` → `OrderItem` → `Product`, a do zamówienia `ShippingAddress`.
 
 ## Stack
-Python, Django 4.2, PostgreSQL (psycopg2), Bootstrap 5, JavaScript (Fetch API)
+Python, Django 5.2, PostgreSQL (psycopg2), Bootstrap 5, JavaScript (Fetch API)
 
 ## Uruchomienie
 ```bash
